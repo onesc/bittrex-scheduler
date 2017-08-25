@@ -3,11 +3,11 @@ const api = require ('./api.js');
 
 const performConditionalTrade = condition => new Promise(async (resolve, reject) => {
     const status = await api.checkOrderStatus(condition.uuid).catch((err) => { reject(err) });
-    console.log(status)
-    if (condition.orderCondition === 'filled' && !status.isOpen && !status.CancelInitiated) {
+
+    if (!status.isOpen && !status.CancelInitiated) {
         console.log(condition.originalOptions + " was successful! making order ", condition.options);
         await api.makeBittrexOrder(condition.options).catch((err) => { console.error(err) });
-        if (condition.nextCondition) {pushNewCondition(condition.nextCondition)};
+        if (condition.nextCondition) { pushNewCondition(condition.nextCondition) };
     } else {
         console.log("barnt");
     }
@@ -38,8 +38,7 @@ const trade = async () => {
 
     const tradeResult = await api.makeBittrexOrder(tradeOptions).catch((err) => { console.error(err) });
 
-    const condition = { 
-        orderCondition: "filled", 
+    const condition = {
         uuid: tradeResult.result.uuid, 
         options: conditionalTradeOptions, 
         originalOptions: tradeOptions, 
