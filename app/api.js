@@ -1,9 +1,8 @@
 const Bittrex = require('node.bittrex.api');
-const apikeys = require('./apikeys');
-Bittrex.options(apikeys.bittrex);
+Bittrex.options({apikey: process.env.BKEY, apisecret: process.env.BSECRET});
 
 const makeBittrexOrder = options => new Promise((resolve, reject) => {
-    const url = `https://bittrex.com/api/v1.1/market/${options.buyOrSell}limit?apikey=${apikeys.bittrex.apikey}&market=${options.market}&quantity=${options.quantity}&rate=${options.rate}`;
+    const url = `https://bittrex.com/api/v1.1/market/${options.buyOrSell}limit?apikey=${process.env.BKEY}&market=${options.market}&quantity=${options.quantity}&rate=${options.rate}`;
     Bittrex.sendCustomRequest(url, (data, err) => {
         if (err) reject(err)
         else resolve(data);

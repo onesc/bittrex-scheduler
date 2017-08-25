@@ -1,4 +1,5 @@
 const fs = require('fs');
+const path = require('path');
 const api = require ('./api.js');
 
 const performConditionalTrade = condition => new Promise(async (resolve, reject) => {
@@ -14,7 +15,7 @@ const performConditionalTrade = condition => new Promise(async (resolve, reject)
 });    
 
 const pushNewCondition = condition => {
-    fs.readFile("./conditions.json", async (err, data) => {
+    fs.readFile(path.resolve(__dirname) + "/conditions.json", async (err, data) => {
        const pendingTrades = JSON.parse(data)
        pendingTrades.push(condition);
        fs.writeFile("./conditions.json", JSON.stringify(pendingTrades))   
@@ -22,19 +23,14 @@ const pushNewCondition = condition => {
 }
 
 const trade = async () => {
-    const tradeOptions = {
-        market: 'BTC-OMG',
-        quantity: 1,
-        rate: 0.001,
-        buyOrSell: 'buy'
+    const tradeOptions = { 
+        market: 'BTC-OMG', 
+        quantity: 1, 
+        rate: 0.001, 
+        buyOrSell: 'buy' 
     }
 
-    const conditionalTradeOptions = {
-        market: 'BTC-OMG',
-        quantity: 1,
-        rate: 0.004,
-        buyOrSell: 'sell'
-    }
+    const conditionalTradeOptions = { market: 'BTC-OMG', quantity: 1, rate: 0.004, buyOrSell: 'sell' }
 
     const tradeResult = await api.makeBittrexOrder(tradeOptions).catch((err) => { console.error(err) });
 
@@ -45,13 +41,15 @@ const trade = async () => {
         nextCondition: false
     }
 
+    console.log(condition)
+
     pushNewCondition(condition)
 }
 
 
-fs.readFile("./conditions.json", async (err, data) => {
-    const pendingTrades = JSON.parse(data) 
-    const status = await performConditionalTrade(pendingTrades[0])
-})
-
-// trade();
+// fs.readFile(path.resolve(__dirname) + "/conditions.json", async (err, data) => {
+//     const pendingTrades = JSON.parse(data) 
+//     const status = await performConditionalTrade(pendingTrades[0])
+// })
+// console.log(process.env)
+trade();
