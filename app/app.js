@@ -9,6 +9,7 @@ const performConditionalTrade = condition => new Promise(async (resolve, reject)
         if (!status.isOpen && !status.CancelInitiated) {
             const trade = await api.makeBittrexOrder(condition.options).catch((err) => { reject(err) });
             if (trade && trade.success) {
+                console.log("CONDITION MET!", JSON.stringify(condition, null, '\t'));
                 iterateCondition(condition, trade.uuid);
             };
         } 
@@ -19,7 +20,6 @@ const iterateCondition = (condition, uuid) => {
     fs.readFile(path.resolve(__dirname + "/conditions.json"), async (err, data) => {
         if (err) console.error(err);
         const pendingTrades = JSON.parse(data)
-
         const filteredTrades = pendingTrades.map((p) => {
             if (!equal(p, condition)) return p;
             if (p.nextCondition) {
@@ -27,7 +27,6 @@ const iterateCondition = (condition, uuid) => {
                 return p.nextCondition 
             }
         }).filter((item) => item);
-
         fs.writeFileSync(path.resolve(__dirname + "/conditions.json"), JSON.stringify(filteredTrades, null, '\t'))   
     })
 }
@@ -59,13 +58,13 @@ const trade = async () => {
     try {
         const initialTradeOptions = { 
             market: 'BTC-OMG', 
-            quantity: 0.3, 
+            quantity: 0.3,  
             rate: 0.00187, 
             buyOrSell: 'sell' 
         }
         const tradeResult = await api.makeBittrexOrder(initialTradeOptions).catch((err) => { console.error("makeBittrexOrder rejected " + JSON.stringify(initialTradeOptions, null, '\trade')); console.error(err) });
 
-      const seq = [{ 
+        const seq = [{ 
             market: 'BTC-OMG', 
             quantity: 0.3, 
             rate: 0.0018699, 
@@ -96,10 +95,17 @@ const trade = async () => {
 }
 
 // trade();
-fs.readFile(path.resolve(__dirname + "/conditions.json"), async (err, data) => {
-    if (err) console.error(err);
-    const pendingTrades = JSON.parse(data)
-    performConditionalTrade(pendingTrades[0]).catch((err) => { console.error(err) })
-})
+
+const executeConditions = () => {
+    fs.readFile(path.resolve(__dirname + "/conditions.json"), async (err, data) => {
+        if (err) console.error(err);
+        const conditions = JSON.parse(data)
+        conditions.forEach(async(c) => {
+            await performConditionalTrade(c).catch((err) => { console.error(err) })
+        })
+    })  
+}
+
+executeConditions()
 
 
