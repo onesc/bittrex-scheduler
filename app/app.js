@@ -15,10 +15,11 @@ const performConditionalTrade = condition => new Promise(async (resolve, reject)
 });    
 
 const pushNewCondition = condition => {
-    fs.readFile(path.resolve(__dirname) + "/conditions.json", async (err, data) => {
+    fs.readFile(path.resolve(__dirname + "/conditions.json"), async (err, data) => {
        const pendingTrades = JSON.parse(data)
        pendingTrades.push(condition);
-       fs.writeFile("./conditions.json", JSON.stringify(pendingTrades))   
+       console.log(pendingTrades)
+       fs.writeFile(path.resolve(__dirname + "/conditions.json"), JSON.stringify(pendingTrades, null, '\t'))   
     })
 }
 
@@ -26,7 +27,7 @@ const trade = async () => {
     const tradeOptions = { 
         market: 'BTC-OMG', 
         quantity: 1, 
-        rate: 0.001, 
+        rate: 0.0005, 
         buyOrSell: 'buy' 
     }
 
@@ -46,10 +47,4 @@ const trade = async () => {
     pushNewCondition(condition)
 }
 
-
-// fs.readFile(path.resolve(__dirname) + "/conditions.json", async (err, data) => {
-//     const pendingTrades = JSON.parse(data) 
-//     const status = await performConditionalTrade(pendingTrades[0])
-// })
-// console.log(process.env)
 trade();
