@@ -21,8 +21,6 @@ const iterateCondition = (condition, uuid) => {
         const pendingTrades = JSON.parse(data)
 
         const filteredTrades = pendingTrades.map((p) => {
-            console.log(!equal(p, condition))
-            console.log
             if (!equal(p, condition)) return p;
             if (p.nextCondition) {
                 p.nextCondition.uuid = condition.uuid;
@@ -41,7 +39,21 @@ const pushCondition = condition => {
         pendingTrades.push(condition);
         fs.writeFileSync(path.resolve(__dirname + "/conditions.json"), JSON.stringify(pendingTrades, null, '\t'))   
     })
-}   
+}
+
+const constructSequence = (sequence, uuid) => {
+    let obj = null;
+    for (var i = sequence.length - 1; i >= 0; i--) {
+        if (sequence.length === i + 1) {
+            obj = {options: {...sequence[i]}}
+        } else {
+            obj = {options: {...sequence[i]}, nextCondition: {...obj}}      
+        }
+    }
+    if (uuid) { obj.uuid = uuid };
+    return obj;
+}
+
 
 const trade = async () => {
     try {
@@ -53,48 +65,30 @@ const trade = async () => {
         }
         const tradeResult = await api.makeBittrexOrder(initialTradeOptions).catch((err) => { console.error("makeBittrexOrder rejected " + JSON.stringify(initialTradeOptions, null, '\trade')); console.error(err) });
 
-        const fourthCondition = {
-            options: { 
-                market: 'BTC-OMG', 
-                quantity: 0.3, 
-                rate: 0.0018696, 
-                buyOrSell: 'sell' 
-            }, 
-            nextCondition: false
-        }
+      const seq = [{ 
+            market: 'BTC-OMG', 
+            quantity: 0.3, 
+            rate: 0.0018699, 
+            buyOrSell: 'sell' 
+        }, { 
+            market: 'BTC-OMG', 
+            quantity: 0.3, 
+            rate: 0.0018698, 
+            buyOrSell: 'sell' 
+        }, { 
+            market: 'BTC-OMG', 
+            quantity: 0.3, 
+            rate: 0.0018697, 
+            buyOrSell: 'sell' 
+        }, { 
+            market: 'BTC-OMG', 
+            quantity: 0.3, 
+            rate: 0.0018696, 
+            buyOrSell: 'sell' 
+        }];
 
-        const thirdCondition = {
-            options: { 
-                market: 'BTC-OMG', 
-                quantity: 0.3, 
-                rate: 0.0018697, 
-                buyOrSell: 'sell' 
-            }, 
-            nextCondition: fourthCondition
-        }
-
-        const secondCondition = {
-            options: { 
-                market: 'BTC-OMG', 
-                quantity: 0.3, 
-                rate: 0.0018698, 
-                buyOrSell: 'sell' 
-            }, 
-            nextCondition: thirdCondition
-        }
-
-        const firstCondition = {
-            uuid: tradeResult.result.uuid, 
-            options: { 
-                market: 'BTC-OMG', 
-                quantity: 0.3, 
-                rate: 0.0018699, 
-                buyOrSell: 'sell' 
-            }, 
-            nextCondition: secondCondition
-        }
-
-        pushCondition(firstCondition)
+        const condition = constructSequence(seq, tradeResult.result.uuid);
+        pushCondition(condition)
     } catch(err) {
         console.error(err)
     }
@@ -102,10 +96,10 @@ const trade = async () => {
 }
 
 // trade();
-// fs.readFile(path.resolve(__dirname + "/conditions.json"), async (err, data) => {
-//     if (err) console.error(err);
-//     const pendingTrades = JSON.parse(data)
-//     performConditionalTrade(pendingTrades[0]).catch((err) => { console.error(err) })
-// })
+fs.readFile(path.resolve(__dirname + "/conditions.json"), async (err, data) => {
+    if (err) console.error(err);
+    const pendingTrades = JSON.parse(data)
+    performConditionalTrade(pendingTrades[0]).catch((err) => { console.error(err) })
+})
 
 
