@@ -10,6 +10,7 @@
   "author": "nik malev",
   "license": "ISC",
   "dependencies": {
+    "deep-equal": "^1.0.1",
     "node.bittrex.api": "^0.4.4"
   }
 }
