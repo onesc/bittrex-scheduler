@@ -1,37 +1,24 @@
-const fs = require('fs');
-const path = require('path');
-const api = require ('./api.js');
-const equal = require('deep-equal');
+const api = require ('./api');
 const utils = require('./utils');
 
-const startSequence = async () => {
+const insertSequence = async () => {
     try {
         const tradeResult = await api.makeBittrexOrder({ 
             market: 'BTC-OMG', 
-            quantity: 0.3,  
-            rate: 0.00187, 
+            quantity: 20,  
+            rate: 0.00195, 
             buyOrSell: 'sell' 
         }).catch((err) => { console.error("makeBittrexOrder rejected " + JSON.stringify(initialTradeOptions, null, '\trade')); console.error(err) });
 
         const seq = [{ 
             market: 'BTC-OMG', 
-            quantity: 0.3, 
-            rate: 0.0018699, 
-            buyOrSell: 'sell' 
+            quantity: 20, 
+            rate: 0.00185, 
+            buyOrSell: 'buy' 
         }, { 
             market: 'BTC-OMG', 
-            quantity: 0.3, 
-            rate: 0.0018698, 
-            buyOrSell: 'sell' 
-        }, { 
-            market: 'BTC-OMG', 
-            quantity: 0.3, 
-            rate: 0.0018697, 
-            buyOrSell: 'sell' 
-        }, { 
-            market: 'BTC-OMG', 
-            quantity: 0.3, 
-            rate: 0.0018696, 
+            quantity: 20, 
+            rate: 0.00195, 
             buyOrSell: 'sell' 
         }];
 
@@ -40,21 +27,10 @@ const startSequence = async () => {
     } catch(err) {
         console.error(err)
     }
-    
 }
 
-startSequence();
-
-const executeConditions = () => {
-    fs.readFile(path.resolve(__dirname + "/conditions.json"), async (err, data) => {
-        if (err) console.error(err);
-        const conditions = JSON.parse(data)
-        conditions.forEach(async(c) => {
-            await performConditionalTrade(c).catch((err) => { console.error(err) })
-        })
-    })  
-}
-
-// executeConditions()
+// insertSequence();
+utils.executeConditions()
+setInterval(utils.executeConditions, 180000)
 
 

@@ -3,14 +3,29 @@ const path = require('path');
 const api = require ('./api.js');
 const equal = require('deep-equal');
 
-const pushCondition = condition => {
+const executeConditions = async () => {
     fs.readFile(path.resolve(__dirname + "/conditions.json"), async (err, data) => {
         if (err) console.error(err);
-        const pendingTrades = JSON.parse(data)
-        pendingTrades.push(condition);
-        fs.writeFileSync(path.resolve(__dirname + "/conditions.json"), JSON.stringify(pendingTrades, null, '\t'))   
-    })
+        const conditions = JSON.parse(data)
+        conditions.forEach(async(c) => {
+            await performConditionalTrade(c).catch((err) => { console.error(err) })
+        })
+        console.log(new Date(), "checked conditions")
+    })  
 }
+
+const performConditionalTrade = condition => new Promise(async (resolve, reject) => {
+    try {    
+        const status = await api.checkOrderStatus(condition.uuid).catch((err) => { reject(err) });
+        if (!status.result.IsOpen && !status.result.CancelInitiated) {
+            const trade = await api.makeBittrexOrder(condition.options).catch((err) => { reject(err) });
+            if (trade && trade.success) {
+                console.log("CONDITION MET!", JSON.stringify(condition, null, '\t'));
+                iterateCondition(condition, trade.uuid);
+            };
+        } 
+    } catch (err) { console.error(err) }
+});   
 
 const iterateCondition = (condition, uuid) => {
     fs.readFile(path.resolve(__dirname + "/conditions.json"), async (err, data) => {
@@ -27,18 +42,14 @@ const iterateCondition = (condition, uuid) => {
     })
 }
 
-const performConditionalTrade = condition => new Promise(async (resolve, reject) => {
-    try {    
-        const status = await api.checkOrderStatus(condition.uuid).catch((err) => { reject(err) });
-        if (!status.isOpen && !status.CancelInitiated) {
-            const trade = await api.makeBittrexOrder(condition.options).catch((err) => { reject(err) });
-            if (trade && trade.success) {
-                console.log("CONDITION MET!", JSON.stringify(condition, null, '\t'));
-                iterateCondition(condition, trade.uuid);
-            };
-        } 
-    } catch (err) { console.error(err) }
-});   
+const pushCondition = condition => {
+    fs.readFile(path.resolve(__dirname + "/conditions.json"), async (err, data) => {
+        if (err) console.error(err);
+        const pendingTrades = JSON.parse(data)
+        pendingTrades.push(condition);
+        fs.writeFileSync(path.resolve(__dirname + "/conditions.json"), JSON.stringify(pendingTrades, null, '\t'))   
+    })
+}
 
 const constructSequence = (sequence, uuid) => {
     let obj = null;
@@ -53,15 +64,6 @@ const constructSequence = (sequence, uuid) => {
     return obj;
 }
 
-const executeConditions = () => {
-    fs.readFile(path.resolve(__dirname + "/conditions.json"), async (err, data) => {
-        if (err) console.error(err);
-        const conditions = JSON.parse(data)
-        conditions.forEach(async(c) => {
-            await performConditionalTrade(c).catch((err) => { console.error(err) })
-        })
-    })  
-}
 
 
 exports.constructSequence = constructSequence;
